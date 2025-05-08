@@ -49,7 +49,14 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     const selectedPolygonData = polygons.find(p => p.id === selectedPolygon.id);
     if (!selectedPolygonData) return;
     
-    const dataStr = JSON.stringify(selectedPolygonData.geoJSON, null, 2);
+    // Format to match sectors.ts structure (name, color, geometry)
+    const sectorFormat = {
+      name: selectedPolygonData.name,
+      color: selectedPolygonData.color || "#3388ff",
+      geometry: selectedPolygonData.geoJSON
+    };
+    
+    const dataStr = JSON.stringify(sectorFormat, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     
@@ -65,20 +72,16 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   const handleDownloadAllGeoJSON = () => {
     if (polygons.length === 0) return;
     
-    const featureCollection = {
-      type: "FeatureCollection",
-      features: polygons.map(p => ({
-        ...p.geoJSON,
-        properties: {
-          ...p.geoJSON.properties,
-          id: p.id,
-          name: p.name,
-          color: p.color
-        }
+    // Format to match sectors.ts structure with a list array
+    const sectorFormat = {
+      list: polygons.map(p => ({
+        name: p.name,
+        color: p.color || "#3388ff",
+        geometry: p.geoJSON
       }))
     };
     
-    const dataStr = JSON.stringify(featureCollection, null, 2);
+    const dataStr = JSON.stringify(sectorFormat, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     
