@@ -49,13 +49,13 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     const selectedPolygonData = polygons.find(p => p.id === selectedPolygon.id);
     if (!selectedPolygonData) return;
     
-    const dataStr = JSON.stringify(selectedPolygonData.geoJSON);
+    const dataStr = JSON.stringify(selectedPolygonData.geoJSON, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${selectedPolygonData.name.replace(/\s+/g, '_')}.geojson`;
+    a.download = `${selectedPolygonData.name.replace(/\s+/g, '_')}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -78,13 +78,13 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
       }))
     };
     
-    const dataStr = JSON.stringify(featureCollection);
+    const dataStr = JSON.stringify(featureCollection, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'hamilton_polygons.geojson';
+    a.download = 'hamilton_polygons.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
