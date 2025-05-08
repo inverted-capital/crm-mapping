@@ -33,16 +33,29 @@ export const MapContainer: React.FC = () => {
 
   const [selectedPolygon, setSelectedPolygon] = useState<string | null>(null);
 
-  const handlePolygonCreated = (polygon: Omit<PolygonData, "id" | "name">) => {
-    setPolygons((prev) => [
-      ...prev,
-      {
-        ...polygon,
-        id: `polygon-${Date.now()}`,
-        name: `Polygon ${prev.length + 1}`,
-        color: randomColor(),
-      },
-    ]);
+  const handlePolygonCreated = (polygonData: Partial<PolygonData> & { geoJSON: any }) => {
+    // Check if this is an update to an existing polygon
+    if (polygonData.id) {
+      // Update existing polygon
+      setPolygons(prevPolygons => 
+        prevPolygons.map(p => 
+          p.id === polygonData.id 
+            ? { ...p, geoJSON: polygonData.geoJSON } 
+            : p
+        )
+      );
+    } else {
+      // Create new polygon
+      setPolygons(prev => [
+        ...prev,
+        {
+          ...polygonData,
+          id: `polygon-${Date.now()}`,
+          name: `Polygon ${prev.length + 1}`,
+          color: randomColor(),
+        } as PolygonData,
+      ]);
+    }
   };
 
   const randomColor = (): string => {
@@ -92,7 +105,7 @@ export const MapContainer: React.FC = () => {
       <div className="w-full md:w-3/4 h-[70vh] md:h-full">
         <MapComponent
           polygons={polygons}
-          onPolygonCreated={handlePolygonCreated as any}
+          onPolygonCreated={handlePolygonCreated}
           onPolygonDeleted={handlePolygonDeleted}
           selectedPolygon={selectedPolygon}
           onPolygonSelected={handlePolygonSelected}
