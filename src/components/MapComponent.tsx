@@ -15,7 +15,7 @@ import L from "leaflet";
 interface MapComponentProps {
   polygons: PolygonData[];
   selectedPolygon: string | null;
-  onPolygonCreated: (polygon: PolygonData) => void;
+  onPolygonCreated: (polygon: Partial<PolygonData> & { geoJSON: any }) => void;
   onPolygonDeleted: (id: string) => void;
   onPolygonSelected: (id: string) => void;
 }
@@ -77,20 +77,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const layer = e.layer;
     const geoJSON = convertToGeoJSON(layer);
     
-    // Check if this is an edit to an existing polygon or a new one
-    if (selectedPolygon && selectedLayerRef.current === layer) {
-      // This is an edit to the selected polygon
-      // Find the polygon and update its geoJSON
-      const updatedPolygon = {
-        ...polygons.find(p => p.id === selectedPolygon)!,
-        geoJSON
-      };
-      
-      onPolygonCreated(updatedPolygon);
-    } else {
-      // This is a new polygon
-      onPolygonCreated({ geoJSON });
-    }
+    // This is for a new polygon only - edits are handled by handleEdited
+    // and should never trigger this handler
+    onPolygonCreated({ geoJSON });
   };
 
   const handleDeleted = (e: any) => {
@@ -150,26 +139,28 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         />
       </FeatureGroup>
 
-      {/* Render stored polygons */}
-      {polygons.map((polygon) => (
-        <GeoJSON
-          key={polygon.id}
-          data={polygon.geoJSON}
-          pathOptions={{
-            color: polygon.color || "#3388ff",
-            weight: selectedPolygon === polygon.id ? 4 : 2,
-            opacity: selectedPolygon === polygon.id ? 1 : 0.8,
-            fillOpacity: selectedPolygon === polygon.id ? 0.4 : 0.2,
-          }}
-          eventHandlers={{
-            click: () => onPolygonSelected(polygon.id),
-          }}
-          onEachFeature={(feature, layer) => {
-            // Store polygon ID in the layer options for reference
-            (layer as any).options.polygonId = polygon.id;
-          }}
-        />
-      ))}
+      {/* Render stored polygons - excluding the selected one since it's in the feature group */}
+      {polygons
+        .filter(polygon => polygon.id !== selectedPolygon)
+        .map((polygon) => (
+          <GeoJSON
+            key={polygon.id}
+            data={polygon.geoJSON}
+            pathOptions={{
+              color: polygon.color || "#3388ff",
+              weight: 2,
+              opacity: 0.8,
+              fillOpacity: 0.2,
+            }}
+            eventHandlers={{
+              click: () => onPolygonSelected(polygon.id),
+            }}
+            onEachFeature={(feature, layer) => {
+              // Store polygon ID in the layer options for reference
+              (layer as any).options.polygonId = polygon.id;
+            }}
+          />
+        ))}
     </LeafletMapContainer>
   );
 };
