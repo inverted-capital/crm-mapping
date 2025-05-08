@@ -1,9 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { MapContainer as LeafletMapContainer, TileLayer, FeatureGroup, GeoJSON } from 'react-leaflet';
-import { EditControl } from 'react-leaflet-draw';
-import { LatLngExpression } from 'leaflet';
-import { PolygonData } from '../types/mapTypes';
-import { convertToGeoJSON, updateGeoJSONStyle } from '../utils/geoUtils';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  FeatureGroup,
+  GeoJSON,
+  MapContainer as LeafletMapContainer,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+import { EditControl } from "react-leaflet-draw";
+import { LatLngExpression } from "leaflet";
+import { PolygonData } from "../types/mapTypes";
+import { convertToGeoJSON, updateGeoJSONStyle } from "../utils/geoUtils";
 
 interface MapComponentProps {
   polygons: PolygonData[];
@@ -18,11 +24,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   selectedPolygon,
   onPolygonCreated,
   onPolygonDeleted,
-  onPolygonSelected
+  onPolygonSelected,
 }) => {
   const hamiltonCoordinates: LatLngExpression = [-37.7870, 175.2793];
   const featureGroupRef = useRef<any>(null);
-  const [map, setMap] = useState<L.Map | null>(null);
 
   // Handle polygon creation from the draw control
   const handleCreated = (e: any) => {
@@ -42,24 +47,17 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
   };
 
-  useEffect(() => {
-    if (map) {
-      map.invalidateSize();
-    }
-  }, [map]);
-
   return (
-    <LeafletMapContainer 
-      center={hamiltonCoordinates} 
-      zoom={13} 
-      style={{ height: '100%', width: '100%' }}
-      whenReady={(mapInstance) => setMap(mapInstance.target)}
+    <LeafletMapContainer
+      center={hamiltonCoordinates}
+      zoom={13}
+      style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      
+
       {/* Drawing tools control */}
       <FeatureGroup ref={featureGroupRef}>
         <EditControl
@@ -82,7 +80,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           key={polygon.id}
           data={polygon.geoJSON}
           pathOptions={{
-            color: polygon.color || '#3388ff',
+            color: polygon.color || "#3388ff",
             weight: selectedPolygon === polygon.id ? 4 : 2,
             opacity: selectedPolygon === polygon.id ? 1 : 0.8,
             fillOpacity: selectedPolygon === polygon.id ? 0.4 : 0.2,
