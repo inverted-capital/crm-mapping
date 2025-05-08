@@ -20,7 +20,10 @@ export const MapContainer: React.FC = () => {
     const saved = localStorage.getItem("hamiltonMapPolygons");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsedData = JSON.parse(saved);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          return parsedData;
+        }
       } catch {
         /* ignored */
       }
