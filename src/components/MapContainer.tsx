@@ -83,6 +83,14 @@ export const MapContainer: React.FC = () => {
     setPolygons(polygons.map((p) => (p.id === id ? { ...p, name } : p)));
   };
 
+  const handleResetToOriginal = () => {
+    if (window.confirm("Are you sure you want to reset the map to the original state? All your changes will be lost.")) {
+      localStorage.removeItem("hamiltonMapPolygons");
+      setPolygons(sectorPolygons);
+      setSelectedPolygon(null);
+    }
+  };
+
   const selectedInfo: PolygonInfo | null = selectedPolygon
     ? (() => {
       const p = polygons.find((x) => x.id === selectedPolygon);
@@ -118,6 +126,7 @@ export const MapContainer: React.FC = () => {
           onPolygonSelected={handlePolygonSelected}
           onPolygonDeleted={handlePolygonDeleted}
           onNameChange={handleNameChange}
+          onResetToOriginal={handleResetToOriginal}
         />
       </div>
     </div>

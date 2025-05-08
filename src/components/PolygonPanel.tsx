@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Edit2, Download, Check, X, Info } from 'lucide-react';
+import { Trash2, Edit2, Download, Check, X, Info, RefreshCw } from 'lucide-react';
 import { PolygonData, PolygonInfo } from '../types/mapTypes';
 
 interface PolygonPanelProps {
@@ -8,6 +8,7 @@ interface PolygonPanelProps {
   onPolygonSelected: (id: string) => void;
   onPolygonDeleted: (id: string) => void;
   onNameChange: (id: string, name: string) => void;
+  onResetToOriginal: () => void;
 }
 
 export const PolygonPanel: React.FC<PolygonPanelProps> = ({
@@ -15,7 +16,8 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   selectedPolygon,
   onPolygonSelected,
   onPolygonDeleted,
-  onNameChange
+  onNameChange,
+  onResetToOriginal
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
@@ -96,7 +98,17 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
 
   return (
     <div className="p-4 h-full flex flex-col">
-      <h2 className="text-xl font-semibold mb-4">Polygons</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Polygons</h2>
+        <button 
+          onClick={onResetToOriginal}
+          className="flex items-center space-x-1 px-2 py-1 text-sm bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors"
+          title="Reset to original sectors"
+        >
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Reset
+        </button>
+      </div>
       
       {polygons.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-grow text-center p-6 text-slate-500">
