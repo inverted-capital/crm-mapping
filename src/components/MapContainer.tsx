@@ -47,27 +47,29 @@ export const MapContainer: React.FC = () => {
             : p
         )
       );
-    } else {
-      // Create new polygon with a unique ID
-      const newPolygonId = `polygon-${Date.now()}`;
-      const newPolygon = {
-        ...polygonData,
-        id: newPolygonId,
-        name: `Polygon ${polygons.length + 1}`,
-        color: randomColor(),
-        frequencyInDays: 7, // Default values
-        frequencyOffset: 0,
-      } as PolygonData;
-      
-      // Add the new polygon
-      setPolygons(prev => [...prev, newPolygon]);
-      
-      // Automatically select the new polygon
-      setSelectedPolygon(newPolygonId);
-      
-      // Set this as newly created so we can put it in edit mode automatically
-      setNewlyCreatedPolygon(newPolygonId);
+      return; // Important: return early to avoid creating duplicate polygons
     }
+    
+    // Create new polygon with a unique ID
+    const newPolygonId = `polygon-${Date.now()}`;
+    const newPolygon = {
+      ...polygonData,
+      id: newPolygonId,
+      name: `Polygon ${polygons.length + 1}`,
+      color: randomColor(),
+      frequencyInDays: 7, // Default values
+      frequencyOffset: 0,
+    } as PolygonData;
+    
+    // First add the new polygon
+    setPolygons(prev => [...prev, newPolygon]);
+    
+    // Then set it as selected (after it exists in state)
+    // We need to use a callback to ensure this happens after the polygon is added
+    setTimeout(() => {
+      setSelectedPolygon(newPolygonId);
+      setNewlyCreatedPolygon(newPolygonId);
+    }, 0);
   };
 
   const randomColor = (): string => {
@@ -88,7 +90,9 @@ export const MapContainer: React.FC = () => {
   const handlePolygonSelected = (id: string) => {
     setSelectedPolygon(id === selectedPolygon ? null : id);
     // Reset newly created flag when selection changes
-    setNewlyCreatedPolygon(null);
+    if (id !== newlyCreatedPolygon) {
+      setNewlyCreatedPolygon(null);
+    }
   };
 
   const handlePolygonDeleted = (id: string) => {

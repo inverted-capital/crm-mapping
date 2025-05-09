@@ -60,6 +60,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const hamiltonCoordinates: LatLngExpression = [-37.7870, 175.2793];
   const featureGroupRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Convert color name to CSS color
   const getColorValue = (colorName: string = "green"): string => {
@@ -111,12 +112,26 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
   // Handle polygon creation from the draw control
   const handleCreated = (e: any) => {
-    const layer = e.layer;
-    const geoJSON = convertToGeoJSON(layer);
-
-    // This is for a new polygon only - edits are handled by handleEdited
-    // and should never trigger this handler
-    onPolygonCreated({ geoJSON });
+    setIsCreating(true);
+    
+    try {
+      const layer = e.layer;
+      const geoJSON = convertToGeoJSON(layer);
+      
+      // This is for a new polygon only - edits are handled by handleEdited
+      // and should never trigger this handler
+      onPolygonCreated({ geoJSON });
+      
+      // Remove the created layer from the draw layer
+      // It will be added to the edit layer when selected
+      if (featureGroupRef.current) {
+        featureGroupRef.current.removeLayer(layer);
+      }
+    } catch (error) {
+      console.error("Error creating polygon:", error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleDeleted = (e: any) => {
@@ -206,7 +221,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               fillOpacity: 0.2,
             }}
             eventHandlers={{
-              click: () => onPolygonSelected(polygon.id),
+              click: () => onPolygonSelected(polygon.id === selectedPolygon ? null : polygon.id),
             }}
             onEachFeature={(feature, layer) => {
               // Store polygon ID in the layer options for reference
