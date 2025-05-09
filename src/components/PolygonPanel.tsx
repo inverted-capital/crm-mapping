@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Edit2, Download, Check, X, Info, RefreshCw, Pencil, Layers } from 'lucide-react';
+import { Trash2, Download, Check, X, Info, RefreshCw, Pencil } from 'lucide-react';
 import { PolygonData, PolygonInfo } from '../types/mapTypes';
 
 interface PolygonPanelProps {
@@ -25,10 +25,10 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   onResetToOriginal,
   newlyCreatedPolygon
 }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
   const polygonRefs = useRef<{[key: string]: HTMLLIElement | null}>({});
   const editInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const availableColors = [
     "red",
@@ -41,30 +41,6 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     "green",
     "black"
   ];
-
-  const handleEditClick = (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    // First select the polygon if it's not already selected
-    if (!selectedPolygon || selectedPolygon.id !== id) {
-      onPolygonSelected(id);
-    }
-    
-    // Then enable editing
-    setEditingId(id);
-    setEditName(name);
-  };
-
-  const handleSave = () => {
-    if (editingId && editName.trim()) {
-      onNameChange(editingId, editName.trim());
-      setEditingId(null);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-  };
 
   const handleDeletePolygon = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,44 +91,49 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     if (newlyCreatedPolygon && selectedPolygon && newlyCreatedPolygon === selectedPolygon.id) {
       const polygon = polygons.find(p => p.id === newlyCreatedPolygon);
       if (polygon) {
-        setEditingId(polygon.id);
+        setIsEditing(true);
         setEditName(polygon.name);
       }
     }
   }, [newlyCreatedPolygon, selectedPolygon, polygons]);
 
-  // Handle click outside of the edit input to cancel editing
+  // Update edit name when selected polygon changes
   useEffect(() => {
-    if (!editingId) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (editInputRef.current && !editInputRef.current.contains(event.target as Node)) {
-        handleCancel();
-      }
-    };
-
-    // Add the event listener
-    document.addEventListener('mousedown', handleClickOutside);
-    
-    // Clean up
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [editingId]);
-
-  // Cancel editing when selected polygon changes
-  useEffect(() => {
-    if (editingId && selectedPolygon && editingId !== selectedPolygon.id) {
-      handleCancel();
+    if (selectedPolygon) {
+      setEditName(selectedPolygon.name);
     }
-  }, [selectedPolygon, editingId]);
+  }, [selectedPolygon]);
 
   // Handle key press for the edit input
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleSave();
+      handleSaveName();
     }
   };
+
+  const handleSaveName = () => {
+    if (selectedPolygon && editName.trim()) {
+      onNameChange(selectedPolygon.id, editName.trim());
+      setIsEditing(false);
+    }
+  };
+
+  const startEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedPolygon) {
+      setIsEditing(true);
+      setEditName(selectedPolygon.name);
+      // Focus will happen via useEffect when ref is attached
+    }
+  };
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [isEditing]);
 
   return (
     <div className="p-4 h-full flex flex-col">
@@ -189,29 +170,12 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                 `}
                 onClick={() => onPolygonSelected(polygon.id)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: polygon.color }}
-                    />
-                    
-                    {editingId === polygon.id ? (
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="border border-slate-300 rounded px-2 py-1 text-sm"
-                        onClick={(e) => e.stopPropagation()}
-                        onFocus={(e) => e.currentTarget.select()}
-                        ref={editInputRef}
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="font-medium">{polygon.name}</span>
-                    )}
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-4 h-4 rounded-full" 
+                    style={{ backgroundColor: polygon.color }}
+                  />
+                  <span className="font-medium">{polygon.name}</span>
                 </div>
               </li>
             ))}
@@ -240,33 +204,32 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
               <div className="flex">
                 <input
                   type="text"
-                  value={editingId === selectedPolygon.id ? editName : selectedPolygon.name}
+                  value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (editingId !== selectedPolygon.id) {
-                      setEditingId(selectedPolygon.id);
-                      setEditName(selectedPolygon.name);
+                    if (!isEditing) {
+                      setIsEditing(true);
                     }
                   }}
-                  ref={editingId === selectedPolygon.id ? editInputRef : null}
+                  readOnly={!isEditing}
+                  ref={editInputRef}
                 />
-                {editingId === selectedPolygon.id ? (
+                {isEditing ? (
                   <button
-                    onClick={handleSave}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSaveName();
+                    }}
                     className="ml-2 p-2 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
                   >
                     <Check className="h-4 w-4" />
                   </button>
                 ) : (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingId(selectedPolygon.id);
-                      setEditName(selectedPolygon.name);
-                    }}
+                    onClick={startEditing}
                     className="ml-2 p-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
