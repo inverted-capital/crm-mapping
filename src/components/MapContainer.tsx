@@ -32,6 +32,7 @@ export const MapContainer: React.FC = () => {
   });
 
   const [selectedPolygon, setSelectedPolygon] = useState<string | null>(null);
+  const [newlyCreatedPolygon, setNewlyCreatedPolygon] = useState<string | null>(null);
 
   const handlePolygonCreated = (polygonData: Partial<PolygonData> & { geoJSON: any }) => {
     // Check if this is an update to an existing polygon
@@ -45,16 +46,23 @@ export const MapContainer: React.FC = () => {
         )
       );
     } else {
-      // Create new polygon
-      setPolygons(prev => [
-        ...prev,
-        {
-          ...polygonData,
-          id: `polygon-${Date.now()}`,
-          name: `Polygon ${prev.length + 1}`,
-          color: randomColor(),
-        } as PolygonData,
-      ]);
+      // Create new polygon with a unique ID
+      const newPolygonId = `polygon-${Date.now()}`;
+      const newPolygon = {
+        ...polygonData,
+        id: newPolygonId,
+        name: `Polygon ${polygons.length + 1}`,
+        color: randomColor(),
+      } as PolygonData;
+      
+      // Add the new polygon
+      setPolygons(prev => [...prev, newPolygon]);
+      
+      // Automatically select the new polygon
+      setSelectedPolygon(newPolygonId);
+      
+      // Set this as newly created so we can put it in edit mode automatically
+      setNewlyCreatedPolygon(newPolygonId);
     }
   };
 
@@ -72,15 +80,22 @@ export const MapContainer: React.FC = () => {
 
   const handlePolygonSelected = (id: string) => {
     setSelectedPolygon(id === selectedPolygon ? null : id);
+    // Reset newly created flag when selection changes
+    setNewlyCreatedPolygon(null);
   };
 
   const handlePolygonDeleted = (id: string) => {
     setPolygons(polygons.filter((p) => p.id !== id));
     if (selectedPolygon === id) setSelectedPolygon(null);
+    if (newlyCreatedPolygon === id) setNewlyCreatedPolygon(null);
   };
 
   const handleNameChange = (id: string, name: string) => {
     setPolygons(polygons.map((p) => (p.id === id ? { ...p, name } : p)));
+    // Reset newly created flag after name is changed
+    if (newlyCreatedPolygon === id) {
+      setNewlyCreatedPolygon(null);
+    }
   };
 
   const handleResetToOriginal = () => {
@@ -88,6 +103,7 @@ export const MapContainer: React.FC = () => {
       localStorage.removeItem("hamiltonMapPolygons");
       setPolygons(sectorPolygons);
       setSelectedPolygon(null);
+      setNewlyCreatedPolygon(null);
     }
   };
 
@@ -127,6 +143,7 @@ export const MapContainer: React.FC = () => {
           onPolygonDeleted={handlePolygonDeleted}
           onNameChange={handleNameChange}
           onResetToOriginal={handleResetToOriginal}
+          newlyCreatedPolygon={newlyCreatedPolygon}
         />
       </div>
     </div>

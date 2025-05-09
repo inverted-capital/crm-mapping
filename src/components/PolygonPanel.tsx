@@ -9,6 +9,7 @@ interface PolygonPanelProps {
   onPolygonDeleted: (id: string) => void;
   onNameChange: (id: string, name: string) => void;
   onResetToOriginal: () => void;
+  newlyCreatedPolygon: string | null;
 }
 
 export const PolygonPanel: React.FC<PolygonPanelProps> = ({
@@ -17,7 +18,8 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   onPolygonSelected,
   onPolygonDeleted,
   onNameChange,
-  onResetToOriginal
+  onResetToOriginal,
+  newlyCreatedPolygon
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
@@ -78,6 +80,16 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
       });
     }
   }, [selectedPolygon]);
+
+  // Auto-enter edit mode for newly created polygons
+  useEffect(() => {
+    if (newlyCreatedPolygon && selectedPolygon && newlyCreatedPolygon === selectedPolygon.id) {
+      const polygon = polygons.find(p => p.id === newlyCreatedPolygon);
+      if (polygon) {
+        handleEditClick(polygon.id, polygon.name);
+      }
+    }
+  }, [newlyCreatedPolygon, selectedPolygon, polygons]);
 
   return (
     <div className="p-4 h-full flex flex-col">
