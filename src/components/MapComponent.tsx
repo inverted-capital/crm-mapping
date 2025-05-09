@@ -127,7 +127,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         <EditControl
           position="topright"
           onCreated={handleCreated}
-          onDeleted={handleDeleted}
           onEdited={handleEdited}
           draw={{
             rectangle: false,
@@ -135,6 +134,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             circlemarker: false,
             marker: false,
             polyline: false,
+            polygon: { allowIntersection: false }
           }}
           edit={{
             edit: Boolean(selectedPolygon), // Show edit button only when polygon is selected
