@@ -26,7 +26,15 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   const polygonRefs = useRef<{[key: string]: HTMLLIElement | null}>({});
   const editInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleEditClick = (id: string, name: string) => {
+  const handleEditClick = (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // First select the polygon if it's not already selected
+    if (!selectedPolygon || selectedPolygon.id !== id) {
+      onPolygonSelected(id);
+    }
+    
+    // Then enable editing
     setEditingId(id);
     setEditName(name);
   };
@@ -87,7 +95,8 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     if (newlyCreatedPolygon && selectedPolygon && newlyCreatedPolygon === selectedPolygon.id) {
       const polygon = polygons.find(p => p.id === newlyCreatedPolygon);
       if (polygon) {
-        handleEditClick(polygon.id, polygon.name);
+        setEditingId(polygon.id);
+        setEditName(polygon.name);
       }
     }
   }, [newlyCreatedPolygon, selectedPolygon, polygons]);
@@ -195,7 +204,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                     ) : (
                       <>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleEditClick(polygon.id, polygon.name); }}
+                          onClick={(e) => handleEditClick(polygon.id, polygon.name, e)}
                           className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
