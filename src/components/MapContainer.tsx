@@ -34,42 +34,36 @@ export const MapContainer: React.FC = () => {
   });
 
   const [selectedPolygon, setSelectedPolygon] = useState<string | null>(null);
-  const [newlyCreatedPolygon, setNewlyCreatedPolygon] = useState<string | null>(null);
 
-  const handlePolygonCreated = (polygonData: Partial<PolygonData> & { geoJSON: any }) => {
+  const handlePolygonCreated = (
+    polygonData: Partial<PolygonData> & { geoJSON: any },
+  ) => {
     // Check if this is an update to an existing polygon
     if (polygonData.id) {
       // Update existing polygon
-      setPolygons(prevPolygons => 
-        prevPolygons.map(p => 
-          p.id === polygonData.id 
-            ? { ...p, geoJSON: polygonData.geoJSON } 
-            : p
+      setPolygons((prevPolygons) =>
+        prevPolygons.map((p) =>
+          p.id === polygonData.id ? { ...p, geoJSON: polygonData.geoJSON } : p
         )
       );
-      return; // Important: return early to avoid creating duplicate polygons
-    }
-    
-    // Create new polygon with a unique ID
-    const newPolygonId = `polygon-${Date.now()}`;
-    const newPolygon = {
-      ...polygonData,
-      id: newPolygonId,
-      name: `Polygon ${polygons.length + 1}`,
-      color: randomColor(),
-      frequencyInDays: 7, // Default values
-      frequencyOffset: 0,
-    } as PolygonData;
-    
-    // First add the new polygon
-    setPolygons(prev => [...prev, newPolygon]);
-    
-    // Then set it as selected (after it exists in state)
-    // We need to use a callback to ensure this happens after the polygon is added
-    setTimeout(() => {
+    } else {
+      // Create new polygon with a unique ID
+      const newPolygonId = `polygon-${Date.now()}`;
+      const newPolygon = {
+        ...polygonData,
+        id: newPolygonId,
+        name: `Polygon ${polygons.length + 1}`,
+        color: randomColor(),
+        frequencyInDays: 7, // Default values
+        frequencyOffset: 0,
+      } as PolygonData;
+
+      // Add the new polygon
+      setPolygons((prev) => [...prev, newPolygon]);
+
+      // Automatically select the new polygon
       setSelectedPolygon(newPolygonId);
-      setNewlyCreatedPolygon(newPolygonId);
-    }, 0);
+    }
   };
 
   const randomColor = (): string => {
@@ -82,47 +76,47 @@ export const MapContainer: React.FC = () => {
       "violet",
       "pink",
       "green",
-      "black"
+      "black",
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const handlePolygonSelected = (id: string) => {
     setSelectedPolygon(id === selectedPolygon ? null : id);
-    // Reset newly created flag when selection changes
-    if (id !== newlyCreatedPolygon) {
-      setNewlyCreatedPolygon(null);
-    }
   };
 
   const handlePolygonDeleted = (id: string) => {
     setPolygons(polygons.filter((p) => p.id !== id));
     if (selectedPolygon === id) setSelectedPolygon(null);
-    if (newlyCreatedPolygon === id) setNewlyCreatedPolygon(null);
   };
 
   const handleNameChange = (id: string, name: string) => {
     setPolygons(polygons.map((p) => (p.id === id ? { ...p, name } : p)));
-    // Reset newly created flag after name is changed
-    if (newlyCreatedPolygon === id) {
-      setNewlyCreatedPolygon(null);
-    }
   };
 
   const handleColorChange = (id: string, color: string) => {
     setPolygons(polygons.map((p) => (p.id === id ? { ...p, color } : p)));
   };
 
-  const handleFrequencyChange = (id: string, field: 'frequencyInDays' | 'frequencyOffset', value: number) => {
-    setPolygons(polygons.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+  const handleFrequencyChange = (
+    id: string,
+    field: "frequencyInDays" | "frequencyOffset",
+    value: number,
+  ) => {
+    setPolygons(
+      polygons.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+    );
   };
 
   const handleResetToOriginal = () => {
-    if (window.confirm("Are you sure you want to reset the map to the original state? All your changes will be lost.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to reset the map to the original state? All your changes will be lost.",
+      )
+    ) {
       localStorage.removeItem("hamiltonMapPolygons");
       setPolygons(sectorPolygons);
       setSelectedPolygon(null);
-      setNewlyCreatedPolygon(null);
     }
   };
 
@@ -152,7 +146,6 @@ export const MapContainer: React.FC = () => {
         <MapComponent
           polygons={polygons}
           onPolygonCreated={handlePolygonCreated}
-          onPolygonDeleted={handlePolygonDeleted}
           selectedPolygon={selectedPolygon}
           onPolygonSelected={handlePolygonSelected}
         />
@@ -167,7 +160,6 @@ export const MapContainer: React.FC = () => {
           onColorChange={handleColorChange}
           onFrequencyChange={handleFrequencyChange}
           onResetToOriginal={handleResetToOriginal}
-          newlyCreatedPolygon={newlyCreatedPolygon}
         />
       </div>
     </div>

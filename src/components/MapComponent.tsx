@@ -22,20 +22,20 @@ const MapEventHandler = ({ onMapClick }: { onMapClick: () => void }) => {
       // We want to deselect only when clicking on the map itself,
       // not when clicking on a polygon or control
       const target = e.originalEvent.target as HTMLElement;
-      const isMapClick = target.classList.contains('leaflet-container') || 
-                         target.classList.contains('leaflet-tile') ||
-                         target.parentElement?.classList.contains('leaflet-tile-container');
-                         
+      const isMapClick = target.classList.contains("leaflet-container") ||
+        target.classList.contains("leaflet-tile") ||
+        target.parentElement?.classList.contains("leaflet-tile-container");
+
       if (isMapClick) {
         onMapClick();
       }
     };
 
-    map.on('click', handleMapClick);
+    map.on("click", handleMapClick);
 
     // Clean up
     return () => {
-      map.off('click', handleMapClick);
+      map.off("click", handleMapClick);
     };
   }, [map, onMapClick]);
 
@@ -46,7 +46,6 @@ interface MapComponentProps {
   polygons: PolygonData[];
   selectedPolygon: string | null;
   onPolygonCreated: (polygon: Partial<PolygonData> & { geoJSON: any }) => void;
-  onPolygonDeleted: (id: string) => void;
   onPolygonSelected: (id: string) => void;
 }
 
@@ -54,7 +53,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   polygons,
   selectedPolygon,
   onPolygonCreated,
-  onPolygonDeleted,
   onPolygonSelected,
 }) => {
   const hamiltonCoordinates: LatLngExpression = [-37.7870, 175.2793];
@@ -113,15 +111,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   // Handle polygon creation from the draw control
   const handleCreated = (e: any) => {
     setIsCreating(true);
-    
+
     try {
       const layer = e.layer;
       const geoJSON = convertToGeoJSON(layer);
-      
+
       // This is for a new polygon only - edits are handled by handleEdited
       // and should never trigger this handler
       onPolygonCreated({ geoJSON });
-      
+
       // Remove the created layer from the draw layer
       // It will be added to the edit layer when selected
       if (featureGroupRef.current) {
@@ -132,17 +130,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     } finally {
       setIsCreating(false);
     }
-  };
-
-  const handleDeleted = (e: any) => {
-    const layers = e.layers;
-    layers.eachLayer((layer: any) => {
-      // Find the polygon ID from the layer
-      const polygonId = layer.options.polygonId;
-      if (polygonId) {
-        onPolygonDeleted(polygonId);
-      }
-    });
   };
 
   const handleEdited = (e: any) => {
@@ -221,7 +208,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               fillOpacity: 0.2,
             }}
             eventHandlers={{
-              click: () => onPolygonSelected(polygon.id === selectedPolygon ? null : polygon.id),
+              click: () => onPolygonSelected(polygon.id),
             }}
             onEachFeature={(feature, layer) => {
               // Store polygon ID in the layer options for reference
