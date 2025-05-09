@@ -129,6 +129,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           onCreated={handleCreated}
           onEdited={handleEdited}
           draw={{
+            rectangle: false,
             circle: false,
             circlemarker: false,
             marker: false,
