@@ -24,6 +24,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
   const polygonRefs = useRef<{[key: string]: HTMLLIElement | null}>({});
+  const editInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleEditClick = (id: string, name: string) => {
     setEditingId(id);
@@ -91,6 +92,32 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     }
   }, [newlyCreatedPolygon, selectedPolygon, polygons]);
 
+  // Handle click outside of the edit input to cancel editing
+  useEffect(() => {
+    if (!editingId) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editInputRef.current && !editInputRef.current.contains(event.target as Node)) {
+        handleCancel();
+      }
+    };
+
+    // Add the event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingId]);
+
+  // Cancel editing when selected polygon changes
+  useEffect(() => {
+    if (editingId && selectedPolygon && editingId !== selectedPolygon.id) {
+      handleCancel();
+    }
+  }, [selectedPolygon, editingId]);
+
   return (
     <div className="p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -140,6 +167,8 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                         onChange={(e) => setEditName(e.target.value)}
                         className="border border-slate-300 rounded px-2 py-1 text-sm"
                         onClick={(e) => e.stopPropagation()}
+                        onFocus={(e) => e.currentTarget.select()}
+                        ref={editInputRef}
                         autoFocus
                       />
                     ) : (
