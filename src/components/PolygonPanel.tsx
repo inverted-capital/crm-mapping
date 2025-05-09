@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Download, Check, X, Info, RefreshCw, Pencil } from 'lucide-react';
+import { Trash2, Download, Check, X, Info, RefreshCw, Pencil, Save } from 'lucide-react';
 import { PolygonData, PolygonInfo } from '../types/mapTypes';
 
 interface PolygonPanelProps {
@@ -25,10 +25,21 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   onResetToOriginal,
   newlyCreatedPolygon
 }) => {
+  // Edit states
+  const [isNameEditing, setIsNameEditing] = useState(false);
   const [editName, setEditName] = useState<string>('');
+  
+  // Temporary states for all editable fields
+  const [tempColor, setTempColor] = useState<string>('');
+  const [tempFrequencyInDays, setTempFrequencyInDays] = useState<number>(0);
+  const [tempFrequencyOffset, setTempFrequencyOffset] = useState<number>(0);
+  
+  // Track changes that need saving
+  const [hasColorChanges, setHasColorChanges] = useState(false);
+  const [hasFrequencyChanges, setHasFrequencyChanges] = useState(false);
+  
   const polygonRefs = useRef<{[key: string]: HTMLLIElement | null}>({});
   const editInputRef = useRef<HTMLInputElement | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
   const availableColors = [
     "red",
@@ -86,23 +97,28 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     }
   }, [selectedPolygon]);
 
+  // Reset all temporary states when selected polygon changes
+  useEffect(() => {
+    if (selectedPolygon) {
+      setEditName(selectedPolygon.name);
+      setTempColor(selectedPolygon.color || 'green');
+      setTempFrequencyInDays(selectedPolygon.frequencyInDays || 0);
+      setTempFrequencyOffset(selectedPolygon.frequencyOffset || 0);
+      setHasColorChanges(false);
+      setHasFrequencyChanges(false);
+    }
+  }, [selectedPolygon]);
+
   // Auto-enter edit mode for newly created polygons
   useEffect(() => {
     if (newlyCreatedPolygon && selectedPolygon && newlyCreatedPolygon === selectedPolygon.id) {
       const polygon = polygons.find(p => p.id === newlyCreatedPolygon);
       if (polygon) {
-        setIsEditing(true);
+        setIsNameEditing(true);
         setEditName(polygon.name);
       }
     }
   }, [newlyCreatedPolygon, selectedPolygon, polygons]);
-
-  // Update edit name when selected polygon changes
-  useEffect(() => {
-    if (selectedPolygon) {
-      setEditName(selectedPolygon.name);
-    }
-  }, [selectedPolygon]);
 
   // Handle key press for the edit input
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -114,26 +130,64 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
   const handleSaveName = () => {
     if (selectedPolygon && editName.trim()) {
       onNameChange(selectedPolygon.id, editName.trim());
-      setIsEditing(false);
+      setIsNameEditing(false);
     }
   };
 
-  const startEditing = (e: React.MouseEvent) => {
+  const startEditingName = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedPolygon) {
-      setIsEditing(true);
+      setIsNameEditing(true);
       setEditName(selectedPolygon.name);
-      // Focus will happen via useEffect when ref is attached
     }
   };
 
-  // Focus input when editing starts
+  const handleTempColorSelect = (color: string) => {
+    setTempColor(color);
+    setHasColorChanges(selectedPolygon?.color !== color);
+  };
+
+  const saveColorChanges = () => {
+    if (selectedPolygon && hasColorChanges) {
+      onColorChange(selectedPolygon.id, tempColor);
+      setHasColorChanges(false);
+    }
+  };
+
+  const handleTempFrequencyChange = (field: 'frequencyInDays' | 'frequencyOffset', value: number) => {
+    if (field === 'frequencyInDays') {
+      setTempFrequencyInDays(value);
+    } else {
+      setTempFrequencyOffset(value);
+    }
+    
+    const currentFreqInDays = selectedPolygon?.frequencyInDays || 0;
+    const currentFreqOffset = selectedPolygon?.frequencyOffset || 0;
+    
+    setHasFrequencyChanges(
+      (field === 'frequencyInDays' && value !== currentFreqInDays) ||
+      (field === 'frequencyOffset' && value !== currentFreqOffset) ||
+      (field !== 'frequencyInDays' && tempFrequencyInDays !== currentFreqInDays) ||
+      (field !== 'frequencyOffset' && tempFrequencyOffset !== currentFreqOffset)
+    );
+  };
+
+  const saveFrequencyChanges = () => {
+    if (selectedPolygon && hasFrequencyChanges) {
+      // Update both frequencies at once
+      onFrequencyChange(selectedPolygon.id, 'frequencyInDays', tempFrequencyInDays);
+      onFrequencyChange(selectedPolygon.id, 'frequencyOffset', tempFrequencyOffset);
+      setHasFrequencyChanges(false);
+    }
+  };
+
+  // Focus input when name editing starts
   useEffect(() => {
-    if (isEditing && editInputRef.current) {
+    if (isNameEditing && editInputRef.current) {
       editInputRef.current.focus();
       editInputRef.current.select();
     }
-  }, [isEditing]);
+  }, [isNameEditing]);
 
   return (
     <div className="p-4 h-full flex flex-col">
@@ -207,17 +261,21 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
+                  className={`w-full border rounded px-3 py-2 text-sm ${
+                    !isNameEditing 
+                      ? 'bg-slate-100 border-slate-300 cursor-pointer' 
+                      : 'border-slate-300'
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!isEditing) {
-                      setIsEditing(true);
+                    if (!isNameEditing) {
+                      setIsNameEditing(true);
                     }
                   }}
-                  readOnly={!isEditing}
+                  readOnly={!isNameEditing}
                   ref={editInputRef}
                 />
-                {isEditing ? (
+                {isNameEditing ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -229,7 +287,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                   </button>
                 ) : (
                   <button
-                    onClick={startEditing}
+                    onClick={startEditingName}
                     className="ml-2 p-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
                   >
                     <Pencil className="h-4 w-4" />
@@ -240,19 +298,31 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
 
             {/* Color selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700">Color</label>
+                {hasColorChanges && (
+                  <button
+                    onClick={saveColorChanges}
+                    className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
+                  >
+                    <span className="flex items-center">
+                      <Save className="h-3 w-3 mr-1" />
+                      Save Changes
+                    </span>
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {availableColors.map(color => (
                   <button
                     key={color}
-                    onClick={() => onColorChange(selectedPolygon.id, color)}
+                    onClick={() => handleTempColorSelect(color)}
                     className={`
                       p-2 rounded-lg border transition-colors flex items-center justify-center
-                      ${selectedPolygon.color === color 
+                      ${tempColor === color 
                         ? 'border-2 border-blue-500 shadow-sm' 
                         : 'border-slate-200 hover:bg-slate-50'}
                     `}
-                    style={{ backgroundColor: color === 'white' ? 'white' : undefined }}
                   >
                     <div className="w-full h-5 rounded" style={{ backgroundColor: color }} />
                   </button>
@@ -260,36 +330,56 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
               </div>
             </div>
 
-            {/* Frequency in Days */}
+            {/* Frequency fields */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Frequency in Days</label>
-              <input
-                type="number"
-                min="0"
-                value={selectedPolygon.frequencyInDays || 0}
-                onChange={(e) => onFrequencyChange(
-                  selectedPolygon.id, 
-                  'frequencyInDays', 
-                  Math.max(0, parseInt(e.target.value) || 0)
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700">Frequency Settings</label>
+                {hasFrequencyChanges && (
+                  <button
+                    onClick={saveFrequencyChanges}
+                    className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
+                  >
+                    <span className="flex items-center">
+                      <Save className="h-3 w-3 mr-1" />
+                      Save Changes
+                    </span>
+                  </button>
                 )}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
-              />
-            </div>
+              </div>
+              
+              {/* Frequency in Days */}
+              <div className="mb-3">
+                <label className="block text-xs text-slate-600 mb-1">Frequency in Days</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tempFrequencyInDays}
+                  onChange={(e) => handleTempFrequencyChange(
+                    'frequencyInDays', 
+                    Math.max(0, parseInt(e.target.value) || 0)
+                  )}
+                  className={`w-full border rounded px-3 py-2 text-sm ${
+                    hasFrequencyChanges ? 'border-yellow-300 bg-yellow-50' : 'border-slate-300'
+                  }`}
+                />
+              </div>
 
-            {/* Frequency Offset */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Frequency Offset</label>
-              <input
-                type="number"
-                min="0"
-                value={selectedPolygon.frequencyOffset || 0}
-                onChange={(e) => onFrequencyChange(
-                  selectedPolygon.id, 
-                  'frequencyOffset', 
-                  Math.max(0, parseInt(e.target.value) || 0)
-                )}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
-              />
+              {/* Frequency Offset */}
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">Frequency Offset</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tempFrequencyOffset}
+                  onChange={(e) => handleTempFrequencyChange(
+                    'frequencyOffset', 
+                    Math.max(0, parseInt(e.target.value) || 0)
+                  )}
+                  className={`w-full border rounded px-3 py-2 text-sm ${
+                    hasFrequencyChanges ? 'border-yellow-300 bg-yellow-50' : 'border-slate-300'
+                  }`}
+                />
+              </div>
             </div>
 
             {/* Summary information */}
