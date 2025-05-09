@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trash2, Edit2, Download, Check, X, Info, RefreshCw } from 'lucide-react';
 import { PolygonData, PolygonInfo } from '../types/mapTypes';
 
@@ -21,6 +21,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
+  const polygonRefs = useRef<{[key: string]: HTMLLIElement | null}>({});
 
   const handleEditClick = (id: string, name: string) => {
     setEditingId(id);
@@ -40,35 +41,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
 
   const handleDeletePolygon = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this polygon?')) {
-      onPolygonDeleted(id);
-    }
-  };
-
-  const handleDownloadGeoJSON = () => {
-    if (!selectedPolygon) return;
-    
-    const selectedPolygonData = polygons.find(p => p.id === selectedPolygon.id);
-    if (!selectedPolygonData) return;
-    
-    // Format to match sectors.ts structure (name, color, geometry)
-    const sectorFormat = {
-      name: selectedPolygonData.name,
-      color: selectedPolygonData.color || "#3388ff",
-      geometry: selectedPolygonData.geoJSON
-    };
-    
-    const dataStr = JSON.stringify(sectorFormat, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${selectedPolygonData.name.replace(/\s+/g, '_')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    onPolygonDeleted(id);
   };
 
   const handleDownloadAllGeoJSON = () => {
@@ -96,6 +69,16 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  // Scroll selected polygon into view when it changes
+  useEffect(() => {
+    if (selectedPolygon && polygonRefs.current[selectedPolygon.id]) {
+      polygonRefs.current[selectedPolygon.id]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  }, [selectedPolygon]);
+
   return (
     <div className="p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -122,6 +105,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
             {polygons.map((polygon) => (
               <li 
                 key={polygon.id}
+                ref={el => polygonRefs.current[polygon.id] = el}
                 className={`
                   p-3 rounded-lg border transition-all duration-200 cursor-pointer
                   ${selectedPolygon?.id === polygon.id 
@@ -204,13 +188,6 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
               <span>{selectedPolygon.coordinates[0].length}</span>
             </div>
           </div>
-          <button 
-            onClick={handleDownloadGeoJSON}
-            className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download GeoJSON
-          </button>
         </div>
       )}
       
