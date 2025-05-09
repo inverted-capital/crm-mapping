@@ -34,26 +34,28 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   // Add selected polygon to feature group for editing
   useEffect(() => {
     if (!featureGroupRef.current) return;
-    
+
     // Clear any existing layers in the feature group
     featureGroupRef.current.clearLayers();
-    
+
     // If a polygon is selected, add it to the feature group
     if (selectedPolygon) {
-      const selectedPolygonData = polygons.find(p => p.id === selectedPolygon);
+      const selectedPolygonData = polygons.find((p) =>
+        p.id === selectedPolygon
+      );
       if (selectedPolygonData) {
         try {
           // Create a Leaflet layer from the GeoJSON
           const layer = L.geoJSON(selectedPolygonData.geoJSON);
-          
+
           // Extract the first layer (the polygon)
           layer.eachLayer((l: any) => {
             // Store reference to this selected layer
             selectedLayerRef.current = l;
-            
+
             // Set polygon ID on the layer for reference
             l.options.polygonId = selectedPolygonData.id;
-            
+
             // Set the layer style
             l.setStyle({
               color: selectedPolygonData.color || "#3388ff",
@@ -61,7 +63,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               opacity: 1,
               fillOpacity: 0.4,
             });
-            
+
             // Add to feature group for editing
             featureGroupRef.current.addLayer(l);
           });
@@ -76,7 +78,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const handleCreated = (e: any) => {
     const layer = e.layer;
     const geoJSON = convertToGeoJSON(layer);
-    
+
     // This is for a new polygon only - edits are handled by handleEdited
     // and should never trigger this handler
     onPolygonCreated({ geoJSON });
@@ -102,10 +104,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         // Update the polygon with the new geometry
         const geoJSON = convertToGeoJSON(layer);
         const updatedPolygon = {
-          ...polygons.find(p => p.id === polygonId)!,
-          geoJSON
+          ...polygons.find((p) => p.id === polygonId)!,
+          geoJSON,
         };
-        
+
         onPolygonCreated(updatedPolygon);
       }
     });
@@ -134,22 +136,25 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             circlemarker: false,
             marker: false,
             polyline: false,
-            polygon: { allowIntersection: false }
+            polygon: { allowIntersection: false },
           }}
-          edit={{
-            edit: Boolean(selectedPolygon), // Show edit button only when polygon is selected
-            remove: false, // Always hide delete button as deletion is handled in panel
-            poly: {
-              allowIntersection: false,
-            },
-            featureGroup: featureGroupRef.current,
-          }}
+          edit={selectedPolygon
+            ? {
+              // remove: false, // Always hide delete button as deletion is handled in panel
+
+              edit: {
+                poly: {
+                  allowIntersection: false,
+                },
+              },
+            }
+            : undefined}
         />
       </FeatureGroup>
 
       {/* Render stored polygons - excluding the selected one since it's in the feature group */}
       {polygons
-        .filter(polygon => polygon.id !== selectedPolygon)
+        .filter((polygon) => polygon.id !== selectedPolygon)
         .map((polygon) => (
           <GeoJSON
             key={polygon.id}
