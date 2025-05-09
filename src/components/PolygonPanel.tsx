@@ -127,6 +127,13 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     }
   }, [selectedPolygon, editingId]);
 
+  // Handle key press for the edit input
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    }
+  };
+
   return (
     <div className="p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -174,6 +181,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         className="border border-slate-300 rounded px-2 py-1 text-sm"
                         onClick={(e) => e.stopPropagation()}
                         onFocus={(e) => e.currentTarget.select()}
