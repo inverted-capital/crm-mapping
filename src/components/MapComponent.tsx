@@ -140,8 +140,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           }}
           edit={selectedPolygon
             ? {
-              // remove: false, // Always hide delete button as deletion is handled in panel
-
+              remove: false, // Always hide delete button as deletion is handled in panel
               edit: {
                 poly: {
                   allowIntersection: false,
