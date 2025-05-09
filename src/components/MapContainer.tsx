@@ -68,12 +68,15 @@ export const MapContainer: React.FC = () => {
 
   const randomColor = (): string => {
     const colors = [
-      "#2E7D32",
-      "#1976D2",
-      "#7B1FA2",
-      "#C2185B",
-      "#F57C00",
-      "#00796B",
+      "red",
+      "orange",
+      "yellow",
+      "cyan",
+      "purple",
+      "violet",
+      "pink",
+      "green",
+      "black"
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };

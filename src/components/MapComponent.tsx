@@ -31,6 +31,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const featureGroupRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
 
+  // Convert color name to CSS color
+  const getColorValue = (colorName: string = "green"): string => {
+    return colorName;
+  };
+
   // Add selected polygon to feature group for editing
   useEffect(() => {
     if (!featureGroupRef.current) return;
@@ -58,7 +63,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
             // Set the layer style
             l.setStyle({
-              color: selectedPolygonData.color || "#3388ff",
+              color: getColorValue(selectedPolygonData.color),
               weight: 4,
               opacity: 1,
               fillOpacity: 0.4,
@@ -155,7 +160,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             key={polygon.id}
             data={polygon.geoJSON}
             pathOptions={{
-              color: polygon.color || "#3388ff",
+              color: getColorValue(polygon.color),
               weight: 2,
               opacity: 0.8,
               fillOpacity: 0.2,

@@ -62,7 +62,7 @@ export const PolygonPanel: React.FC<PolygonPanelProps> = ({
     const sectorFormat = {
       list: polygons.map(p => ({
         name: p.name,
-        color: p.color || "#3388ff",
+        color: p.color || "green",
         geometry: p.geoJSON
       }))
     };
