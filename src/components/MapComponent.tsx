@@ -143,7 +143,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               allowIntersection: false,
             },
             featureGroup: featureGroupRef.current,
-          } : false}
+          } : undefined}
         />
       </FeatureGroup>
 
