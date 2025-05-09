@@ -138,16 +138,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             polyline: false,
             polygon: { allowIntersection: false },
           }}
-          edit={selectedPolygon
-            ? {
-              remove: false, // Always hide delete button as deletion is handled in panel
-              edit: {
-                poly: {
-                  allowIntersection: false,
-                },
-              },
-            }
-            : undefined}
+          edit={{
+            remove: false, // Always hide delete button as deletion is handled in panel
+            edit: !selectedPolygon
+              ? false
+              : { poly: { allowIntersection: false } },
+          }}
         />
       </FeatureGroup>
 
