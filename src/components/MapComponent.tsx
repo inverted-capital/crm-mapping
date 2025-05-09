@@ -12,6 +12,36 @@ import { PolygonData } from "../types/mapTypes";
 import { convertToGeoJSON, updateGeoJSONStyle } from "../utils/geoUtils";
 import L from "leaflet";
 
+// Component to handle map click events
+const MapEventHandler = ({ onMapClick }: { onMapClick: () => void }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    // Add a click event handler to the map
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      // We want to deselect only when clicking on the map itself,
+      // not when clicking on a polygon or control
+      const target = e.originalEvent.target as HTMLElement;
+      const isMapClick = target.classList.contains('leaflet-container') || 
+                         target.classList.contains('leaflet-tile') ||
+                         target.parentElement?.classList.contains('leaflet-tile-container');
+                         
+      if (isMapClick) {
+        onMapClick();
+      }
+    };
+
+    map.on('click', handleMapClick);
+
+    // Clean up
+    return () => {
+      map.off('click', handleMapClick);
+    };
+  }, [map, onMapClick]);
+
+  return null;
+};
+
 interface MapComponentProps {
   polygons: PolygonData[];
   selectedPolygon: string | null;
@@ -118,6 +148,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
   };
 
+  // Handle map click for deselection
+  const handleMapClick = () => {
+    if (selectedPolygon) {
+      onPolygonSelected(selectedPolygon); // This will toggle off the selection
+    }
+  };
+
   return (
     <LeafletMapContainer
       center={hamiltonCoordinates}
@@ -128,6 +165,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+
+      {/* Map click handler for deselection */}
+      <MapEventHandler onMapClick={handleMapClick} />
 
       {/* Drawing tools control */}
       <FeatureGroup ref={featureGroupRef}>
