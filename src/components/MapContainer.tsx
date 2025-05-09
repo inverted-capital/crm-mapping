@@ -12,6 +12,8 @@ const sectorPolygons: PolygonData[] = sectors.list.map((
   id: `sector-${idx}`,
   name: s.name,
   color: s.color,
+  frequencyInDays: s.frequencyInDays || 0,
+  frequencyOffset: s.frequencyOffset || 0,
   geoJSON: s.geometry,
 }));
 
@@ -53,6 +55,8 @@ export const MapContainer: React.FC = () => {
         id: newPolygonId,
         name: `Polygon ${polygons.length + 1}`,
         color: randomColor(),
+        frequencyInDays: 7, // Default values
+        frequencyOffset: 0,
       } as PolygonData;
       
       // Add the new polygon
@@ -101,6 +105,14 @@ export const MapContainer: React.FC = () => {
     }
   };
 
+  const handleColorChange = (id: string, color: string) => {
+    setPolygons(polygons.map((p) => (p.id === id ? { ...p, color } : p)));
+  };
+
+  const handleFrequencyChange = (id: string, field: 'frequencyInDays' | 'frequencyOffset', value: number) => {
+    setPolygons(polygons.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+  };
+
   const handleResetToOriginal = () => {
     if (window.confirm("Are you sure you want to reset the map to the original state? All your changes will be lost.")) {
       localStorage.removeItem("hamiltonMapPolygons");
@@ -119,6 +131,9 @@ export const MapContainer: React.FC = () => {
         name: p.name,
         area: calculateArea(p.geoJSON),
         coordinates: p.geoJSON.geometry.coordinates,
+        color: p.color,
+        frequencyInDays: p.frequencyInDays,
+        frequencyOffset: p.frequencyOffset,
       };
     })()
     : null;
@@ -145,6 +160,8 @@ export const MapContainer: React.FC = () => {
           onPolygonSelected={handlePolygonSelected}
           onPolygonDeleted={handlePolygonDeleted}
           onNameChange={handleNameChange}
+          onColorChange={handleColorChange}
+          onFrequencyChange={handleFrequencyChange}
           onResetToOriginal={handleResetToOriginal}
           newlyCreatedPolygon={newlyCreatedPolygon}
         />

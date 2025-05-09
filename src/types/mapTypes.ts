@@ -11,6 +11,8 @@ export interface PolygonData {
   id: string;
   name: string;
   color?: string;
+  frequencyInDays?: number;
+  frequencyOffset?: number;
   geoJSON: GeoJSONFeature;
 }
 
@@ -19,4 +21,7 @@ export interface PolygonInfo {
   name: string;
   area: number;
   coordinates: number[][][];
+  color?: string;
+  frequencyInDays?: number;
+  frequencyOffset?: number;
 }
